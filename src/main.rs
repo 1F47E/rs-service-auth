@@ -1,6 +1,13 @@
-#[macro_use] extern crate rocket;
+#[macro_use]
+extern crate rocket;
 use rocket::serde::json::Json;
-use rocket::serde::{Serialize, Deserialize};
+use rocket::serde::json::{json, Value};
+use rocket::serde::{Deserialize, Serialize};
+use rocket::request::{FromRequest, Outcome, Request };
+use rocket::http::Status;
+
+
+// USER
 
 #[derive(Debug, Clone, FromForm, Serialize, Deserialize)]
 #[cfg_attr(test, derive(PartialEq, UriDisplayQuery))]
@@ -17,78 +24,76 @@ struct User {
 
 impl User {
     pub fn new(id: u32, username: String, password: String) -> Self {
-        User { id, username, password }
+        User {
+            id,
+            username,
+            password,
+        }
     }
     pub fn from(id: usize) -> Self {
         let username = String::from("test");
         let password = String::from("test");
         User::new(id as u32, username, password)
     }
-    
-    // pub fn Deserialize(data: String) -> Self {
-    //     let user: User = serde_json::from_str(&data).unwrap();
-    //     user
-    // }
+}
 
-    // pub fn Deserialize(&self) -> String {
-    //     let json = serde_json::to_string(&self).unwrap();
-    //     json
-    // }
+// TOKEN + GUARD
+
+#[derive(Debug)]
+struct Token<'r>(&'r str);
+
+impl Token<'_> {
+    fn create_from_header<'a>(header: &'a str) -> Token<'a> {
+        let token = header.trim_start_matches("Bearer ");
+        Token(token)
+    }
+}
+
+#[derive(Debug)]
+enum ApiAuthError {
+    Missing,
+    Invalid,
+}
+
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for Token<'r> {
+    type Error = ApiAuthError;
+
+    async fn from_request(req: &'r Request<'_>) -> Outcome<Self, Self::Error> {
+        /// Returns true if header contains valid auth token
+        fn is_valid(header: &str) -> bool {
+            // cut bearer from the header
+            let token = header.trim_start_matches("Bearer ");
+            token == "test"
+        }
+
+        match req.headers().get_one("Authorization") {
+            // if not found
+            None => Outcome::Failure((Status::BadRequest, ApiAuthError::Missing)),
+            // if found check if valid
+            Some(val) if is_valid(val) => Outcome::Success(Token::create_from_header(val)),
+            // if not valid
+            Some(_) => Outcome::Failure((Status::BadRequest, ApiAuthError::Invalid)),
+        }
+    }
 }
 
 // ROUTES
+
+// home route with guard (Authoization header)
 #[get("/")]
-fn home() -> &'static str {
-    "Hello, world!"
+fn home(token: Token<'_>) -> &'static str {
+    println!("token: {:?}", token);
+    "Hello, user!"
 }
 
-#[get("/")]
-fn ping() -> &'static str {
-    "pong"
+// Using format = json forces “application/json” to be set
+#[post("/signin", format = "json", data = "<user>")]
+fn sign_in(user: Json<User>) -> Json<User> {
+    println!("{:#?}", user);
+
+    user
 }
-
-#[get("/<id>")]
-fn user(id: usize) -> Json<User> {
-    let user_from_id = User::from(id);
-    // let user = User {
-    //     id: id as u64,
-    //     login: String::from("test"),
-    //     password: String::from("test"),
-    // };
-    // let user_from_id = User
-    /* ... */
-    Json(user_from_id)
-}
-
-
-// Using format = json means that any request that doesn’t specify “application/json”
-// as its Content-Type header value will not be routed to the handler.
-#[post("/", format = "json", data = "<creds>")]
-fn sign_in(creds: Json<User>) -> Json<User> {
-    println!("{:#?}", creds);
-    // let user = User {
-    //     id: 1,
-    //     username: creds.username,
-    //     password: creds.password,
-    // };
-    // Json(creds)
-    creds
-}
-
-
-// add post handler with json
-// #[post("/", format = "json", data = "<user_input>")]
-// fn sign_in(user_input: Json<User>) -> String {
-//     // return out json data pretty
-//     println!("{:#?}", user_input);
-//     // Json(data)
-//     user_input
-// }
-
-// #[get("/signin")]
-// fn sign_in() -> &'static str {
-//     "Sign in"
-// }
 
 #[get("/signout")]
 fn sign_out() -> &'static str {
@@ -100,15 +105,26 @@ fn refresh() -> &'static str {
     "Refresh"
 }
 
+#[get("/ping")]
+fn debug_ping() -> &'static str {
+    "pong"
+}
+
+#[get("/json")]
+fn debug_json() -> Value {
+    json!({
+        "success": true,
+        "payload": {
+            "ping": "pong",
+        },
+    })
+}
 
 #[launch]
 fn rocket() -> _ {
-
     rocket::build()
         .mount("/", routes![home])
-        .mount("/ping", routes![ping])
-        .mount("/signin", routes![sign_in])
-        .mount("/signout", routes![sign_out])
-        .mount("/refresh", routes![refresh])
-        .mount("/user", routes![user])
+        .mount("/auth", routes![sign_in, sign_out])
+        .mount("/token", routes![refresh])
+        .mount("/debug", routes![debug_ping, debug_json])
 }
