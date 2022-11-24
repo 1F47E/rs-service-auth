@@ -9,24 +9,23 @@ use crate::token::Token;
 
 
 #[get("/")]
-pub fn home(token: Token<'_>) -> &'static str {
+pub fn home(token: Token) -> &'static str {
     println!("token: {:?}", token);
     "Hello, user!"
 }
 
 // Using format = json forces “application/json” to be set
 #[post("/signin", format = "json", data = "<auth_data>")]
-pub fn sign_in(auth_data: Json<AuthData>) -> Result<Value, Unauthorized<Value>> {
+pub fn sign_in(auth_data: Json<AuthData>) -> Result<Option<Json<Token>>, Unauthorized<Value>> {
     // println!("{:#?}", &auth_data);
 
-    // let user;
     if auth_data.username == "test" && auth_data.password == "test" {
         // TODO create JWT token
         // user = User::new(1, auth_data.username.clone(), auth_data.password.clone())
         println!("user: {:?}", auth_data);
-        let demo_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.MhQjMm2TlY0uesawWXiQ9dIisMx5yAB7voGCWTeDkO8";
-        // TODO: make cucstom responder with success/error/data
-        Result::Ok(json!({"access_token": demo_token }))
+        let token = Token::new();
+        // Result::Ok(json!({"access_token": demo_token }))
+        Result::Ok(Some(Json(token)))
     } else {
         Result::Err(Unauthorized(Some(json!({"status": "error" }))))
     }
