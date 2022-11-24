@@ -1,15 +1,25 @@
 // #[macro_use]
+use jwt_simple::prelude::*;
 use rocket::form::FromForm;
 use rocket::http::Status;
 use rocket::request::{FromRequest, Outcome, Request};
 use rocket::serde::{Deserialize, Serialize};
-use jwt_simple::prelude::*;
+
+// write files traits
+use std::fs;
+// use std::io::Write; // bring trait into scope
+// use base64::encode;
+
 
 // #[derive(Debug, Clone, FromForm, Serialize, Deserialize)]
 // #[cfg_attr(test, derive(PartialEq, UriDisplayQuery))]
 // #[serde(crate = "rocket::serde")]
-// pub struct Token<'r>(&'r str);
-
+#[derive(Serialize, Deserialize)]
+pub struct TokenData {
+    pub sub: u32,
+    pub name: String,
+    pub token_type: String,
+}
 
 #[derive(Debug, Clone, FromForm, Serialize, Deserialize)]
 #[cfg_attr(test, derive(PartialEq, UriDisplayQuery))]
@@ -17,23 +27,56 @@ use jwt_simple::prelude::*;
 pub struct Token {
     pub access_token: String,
     pub refresh_token: String,
-    pub expires_in: u64,
+    pub expires_in: u32,
+}
+
+#[derive(Serialize, Deserialize)]
+struct MyAdditionalData {
+    user_is_admin: bool,
+    user_country: String,
 }
 
 impl Token {
     pub fn new() -> Self {
-        // TODO: returns HS256Key, get from env later
-        // HS256Key::from_bytes()
-        let key = HS256Key::generate();
-        // key.to_bytes() // save
+        // TODO: get key from env 
+        let path = std::path::Path::new("HS256Key.key");
+        // debug
+        // gen key and save to file
+        // let key = HS256Key::generate();
+        // let key_bytes = key.to_bytes();
+        // fs::write(path, key_bytes).unwrap();
+
+        // read key from the file
+        // read file from path to bytes
+        let key_bytes = fs::read(path).unwrap();
+        
+        // debug
+        // encode to base64 and save to file
+        // let key_base64 = base64::encode(key_bytes.clone());
+        // let path_base64 = std::path::Path::new("HS256Key-b64.txt");
+        // fs::write(path_base64, key_base64).unwrap();
+
+        let key = HS256Key::from_bytes(&key_bytes);
+
+        // Construct claims
+        // simple claims
         let claims = Claims::create(Duration::from_hours(2));
+
+        // advanced claims
+        // let token_data = TokenData {
+        //     sub: 123,
+        //     name: "test".to_string(),
+        //     token_type: "access".to_string(),
+        // };
+
+        // let claims = Claims::with_custom_claims(token_data, Duration::from_secs(30));
+
         // returns result or error Result<String, Error>
         let token_res = key.authenticate(claims);
         let token = match token_res {
             Ok(token) => token,
             Err(error) => panic!("Cant create token: {:?}", error),
         };
-
 
         Token {
             access_token: token.clone(),
@@ -50,7 +93,6 @@ impl Token {
             expires_in: 7200,
         }
     }
-
 }
 
 #[derive(Debug)]
@@ -68,8 +110,25 @@ impl<'r> FromRequest<'r> for Token {
         fn is_valid(header: &str) -> bool {
             // cut bearer from the header
             let token = header.trim_start_matches("Bearer ");
-            // let claims = key.verify_token::<NoCustomClaims>(&self.access_token, None)?;
-            token == "test"
+
+            // read the key
+            let path = std::path::Path::new("HS256Key.key");
+            let key_bytes = fs::read(path).unwrap();
+            let key = HS256Key::from_bytes(&key_bytes); 
+            // let claims = key.verify_token::<TokenData>(&token, None).unwrap();
+            let claims = key.verify_token::<NoCustomClaims>(&token, None);
+            match claims {
+                Ok(claims) => {
+                    // debug
+                    println!("Claims: {:?}", claims);
+                    true
+                },
+                Err(error) => {
+                    // debug
+                    println!("Error: {:?}", error);
+                    false
+                },
+            }
         }
 
         match req.headers().get_one("Authorization") {

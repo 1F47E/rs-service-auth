@@ -2,8 +2,8 @@ use rocket::response::status::Unauthorized;
 use rocket::serde::json::Json;
 use rocket::serde::json::{json, Value};
 
-use rocket::http::Status;
-use crate::user::User;
+// use rocket::http::Status;
+// use crate::user::User;
 use crate::user::AuthData;
 use crate::token::Token;
 
@@ -14,13 +14,36 @@ pub fn home(token: Token) -> &'static str {
     "Hello, user!"
 }
 
+#[get("/verify")]
+pub fn verify(token: Token) -> &'static str {
+    println!("token: {:?}", token);
+    "Hello, user!"
+}
+
 // Using format = json forces “application/json” to be set
 #[post("/signin", format = "json", data = "<auth_data>")]
 pub fn sign_in(auth_data: Json<AuthData>) -> Result<Option<Json<Token>>, Unauthorized<Value>> {
     // println!("{:#?}", &auth_data);
 
     if auth_data.username == "test" && auth_data.password == "test" {
-        // TODO create JWT token
+        // TODO create JWT tokens
+        /*
+        access_token_data = dict(
+            sub=user.get('uid'),
+            iat=dt.utcnow(),
+            exp=dt.utcnow() + td(seconds=60),
+            name=user.get('name'),
+            type="access"
+        )
+
+        refresh_token_data = dict(
+            sub=user.get('uid'),
+            iat=dt.utcnow(),
+            exp=dt.utcnow() + td(days=365),
+            name=user.get('name'),
+            type="refresh"
+        )
+         */
         // user = User::new(1, auth_data.username.clone(), auth_data.password.clone())
         println!("user: {:?}", auth_data);
         let token = Token::new();
