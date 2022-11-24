@@ -3,7 +3,7 @@ use rocket::form::FromForm;
 use rocket::http::Status;
 use rocket::request::{FromRequest, Outcome, Request};
 use rocket::serde::{Deserialize, Serialize};
-
+use jwt_simple::prelude::*;
 
 #[derive(Debug, Clone, FromForm, Serialize, Deserialize)]
 #[cfg_attr(test, derive(PartialEq, UriDisplayQuery))]
@@ -18,9 +18,22 @@ pub struct Token<'r>(&'r str);
 // }
 
 impl Token<'_> {
+    // pub fn new(token: &str) -> Self {
+    //     Token(token)
+    // }
+    // pub fn new(token: &str) -> Self {
+    //     Token(token)
+    // }
+
     fn create_from_header<'a>(header: &'a str) -> Token<'a> {
         let token = header.trim_start_matches("Bearer ");
         Token(token)
+    }
+
+    fn verify(self) -> bool {
+        // let key = HS256Key::generate();
+        // let claims = key.verify_token::<NoCustomClaims>(&token, None)?;
+        true
     }
 }
 

@@ -9,6 +9,6 @@ Basic auth service using JWT tokens
 
 # routes
 ### POST /
-### POST /signin
-### POST /signout
-### POST /refresh
+### POST /auth/signin
+### POST /auth/signout
+### POST /token/refresh

@@ -5,9 +5,9 @@ use rocket::serde::{Deserialize, Serialize};
 #[cfg_attr(test, derive(PartialEq, UriDisplayQuery))]
 #[serde(crate = "rocket::serde")]
 pub struct AuthData {
-    #[field(validate = len(..3))]
+    // #[field(validate = len(..3))]
     pub username: String,
-    #[field(validate = len(..8))]
+    // #[field(validate = len(..8))]
     pub password: String,
 }
 
