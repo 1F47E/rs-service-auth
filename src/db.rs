@@ -22,7 +22,7 @@ impl DB {
         if users.is_empty() {
             // generate 1000 users with login like 555000001 and qwerty1 password alike
             for n in 1..1000 {
-                let uid = 555000000 + n;
+                let uid:u64 = 5550000000 + n;
                 let username = String::from(format!("{}", uid));
                 let key = username.clone();
                 let password = format!("qwerty{}", n);
@@ -45,7 +45,7 @@ impl DB {
         match new_users.get(username) {
             Some(_) => None,
             None => {
-                let uid: u32 = 555000000 + self.users.len() as u32;
+                let uid: u64 = 555000000 + self.users.len() as u64;
                 let user = User::new(uid, String::from(username), String::from(password));
                 new_users.insert(String::from(username), user.clone());
                 DB::save(new_users);
