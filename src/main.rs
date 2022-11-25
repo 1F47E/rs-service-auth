@@ -5,6 +5,7 @@ mod user;
 mod routes;
 mod token;
 mod key;
+mod db;
 use crate::key::Key;
 
 #[launch]
@@ -24,9 +25,8 @@ fn rocket() -> _ {
 
     rocket::build()
         .mount("/", routes![routes::home])
-        .mount("/verify", routes![routes::verify])
-        .mount("/auth", routes![routes::sign_in, routes::sign_out])
-        .mount("/token", routes![routes::refresh])
+        .mount("/auth", routes![routes::sign_in, routes::sign_up])
+        .mount("/token", routes![routes::verify, routes::refresh])
         .mount("/debug", routes![routes::debug_ping, routes::debug_json])
         // catch error
         .register("/", catchers![routes::not_found, routes::bad_request, routes::internal_error])

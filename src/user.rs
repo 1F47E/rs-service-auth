@@ -28,6 +28,9 @@ impl User {
             password,
         }
     }
+    pub fn check_pwd(&self, password: &str) -> bool {
+        self.password == password
+    }
 
     pub fn from_auth(form: AuthData) -> Self {
         // let username = form.username;

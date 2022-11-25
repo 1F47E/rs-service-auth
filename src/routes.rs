@@ -2,11 +2,9 @@ use rocket::response::status::Unauthorized;
 use rocket::serde::json::Json;
 use rocket::serde::json::{json, Value};
 
-// use rocket::http::Status;
-// use crate::user::User;
 use crate::user::AuthData;
 use crate::token::Token;
-
+use crate::db::DB;
 
 #[get("/")]
 pub fn home(token: Token) -> &'static str {
@@ -14,7 +12,7 @@ pub fn home(token: Token) -> &'static str {
     "Hello, user!"
 }
 
-#[get("/")]
+#[get("/verify")]
 pub fn verify(token: Token) -> &'static str {
     println!("token: {:?}", token);
     "Hello, user!"
@@ -25,38 +23,41 @@ pub fn verify(token: Token) -> &'static str {
 pub fn sign_in(auth_data: Json<AuthData>) -> Result<Option<Json<Token>>, Unauthorized<Value>> {
     // println!("{:#?}", &auth_data);
 
-    if auth_data.username == "test" && auth_data.password == "test" {
-        // TODO create JWT tokens
-        /*
-        access_token_data = dict(
-            sub=user.get('uid'),
-            iat=dt.utcnow(),
-            exp=dt.utcnow() + td(seconds=60),
-            name=user.get('name'),
-            type="access"
-        )
-
-        refresh_token_data = dict(
-            sub=user.get('uid'),
-            iat=dt.utcnow(),
-            exp=dt.utcnow() + td(days=365),
-            name=user.get('name'),
-            type="refresh"
-        )
-         */
-        // user = User::new(1, auth_data.username.clone(), auth_data.password.clone())
-        println!("user: {:?}", auth_data);
-        let token = Token::new();
-        // Result::Ok(json!({"access_token": demo_token }))
-        Result::Ok(Some(Json(token)))
-    } else {
-        Result::Err(Unauthorized(Some(json!({"status": "error" }))))
+    let user = DB::get_user_by_username(&auth_data.username);
+    match user {
+        Some(user) => {
+            if user.check_pwd(&auth_data.password) {
+                let token = Token::create_for_user(&user);
+                println!("Successful login for user: {}", user.id);
+                Result::Ok(Some(Json(token)))
+            } else {
+                // print error wrong password for user id
+                println!("Wrong password for user: {}", user.id);
+                Result::Err(Unauthorized(Some(json!({
+                    "status": "error",
+                    "reason": "wrong password"
+                }))))
+            }
+        }
+        None => {
+            println!("User not found: {}", &auth_data.username);
+            Result::Err(Unauthorized(Some(json!({
+            "status": "error",
+            "reason": "user not found"
+        }))))}
     }
+    
 }
 
-#[get("/signout")]
-pub fn sign_out() -> &'static str {
-    "Sign out"
+#[post("/signup", format = "json", data = "<auth_data>")]
+pub fn sign_up(auth_data: Json<AuthData>) -> Option<Json<Token>> {
+    // same as sign in but creating user
+    println!("creating user: {:?}", auth_data);
+    // check if already exists
+    // create user
+    // sign in user
+    let token = Token::new();
+    Some(Json(token))
 }
 
 #[get("/refresh")]

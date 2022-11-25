@@ -7,6 +7,7 @@ use rocket::request::{FromRequest, Outcome, Request};
 use rocket::serde::{Deserialize, Serialize};
 
 use crate::key::Key;
+use crate::user::User;
 
 // #[derive(Debug, Clone, FromForm, Serialize, Deserialize)]
 // #[cfg_attr(test, derive(PartialEq, UriDisplayQuery))]
@@ -28,6 +29,37 @@ pub struct Token {
 }
 
 impl Token {
+    pub fn create_for_user(user: &User) -> Self {
+        let access_token_data = TokenData {
+            sub: user.id,
+            name: user.username.clone(),
+            token_type: "access".to_string(),
+        };
+        let refresh_token_data = TokenData {
+            sub: user.id,
+            name: user.username.clone(),
+            token_type: "refresh".to_string(),
+        };
+        let access_token = Token::create_token(&access_token_data);
+        let refresh_token = Token::create_token(&refresh_token_data);
+        Token {
+            access_token,
+            refresh_token,
+            expires_in: 60,
+        }
+    }
+    pub fn create_token(data: &TokenData) -> String {
+        let key= Key::read().unwrap();
+        let claims = Claims::create(Duration::from_hours(2));
+        // let claims = Claims::with_custom_claims(data, Duration::from_secs(30));
+        key.authenticate(claims).unwrap()
+        // let token_res = key.authenticate(claims)
+        // let token = match token_res {
+        //     Ok(token) => token,
+        //     Err(error) => panic!("Cant create token: {:?}", error),
+        // };
+    }
+
     pub fn new() -> Self {
         // TODO: get key from env
         let key= Key::read().unwrap();
