@@ -20,6 +20,7 @@ pub struct User {
     pub password: String,
 }
 
+// TODO: hash password 
 impl User {
     pub fn new(id: u32, username: String, password: String) -> Self {
         User {
@@ -30,11 +31,5 @@ impl User {
     }
     pub fn check_pwd(&self, password: &str) -> bool {
         self.password == password
-    }
-
-    pub fn from_auth(form: AuthData) -> Self {
-        // let username = form.username;
-        // let password = form.password;
-        User::new(0, form.username, form.password)
     }
 }
