@@ -10,12 +10,13 @@ Auth service using JWT tokens written in Rust and Rocket
 
 
 ## TODO
-- [ ] GET /me
+- [x] JWT
 - [x] POST /auth/signin
-- [ ] POST /auth/signup
+- [x] POST /auth/signup
 - [x] GET /token/verify
 - [ ] POST /token/refresh
-- [x] JWT
+- [ ] GET /me
+- [x] users from file
 - [ ] key from env
-- [ ] users from db
+- [ ] storage adapter
 

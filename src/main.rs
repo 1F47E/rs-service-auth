@@ -2,28 +2,21 @@
 extern crate rocket;
 
 mod db;
-mod key;
 mod routes;
 mod token;
 mod user;
+mod key;
+mod config;
+
 use crate::db::DB;
-use crate::key::Key;
-
-
+use crate::config::Config;
 
 #[launch]
 fn rocket() -> _ {
-    // read the key from the file
-    let key = Key::read();
-    match key {
-        Some(_) => println!("Key exist"),
-        None => {
-            println!("Key not exist, creating");
-            let key = Key::gen();
-            Key::write(key.to_bytes());
-            println!("Key created");
-        }
-    }
+
+    let config = Config::get();
+    // assert if envs are not set
+    assert!(!config.key_base64.is_empty());
 
     // init and fill demo db
     _ = DB::init();

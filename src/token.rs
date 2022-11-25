@@ -6,6 +6,7 @@ use rocket::http::Status;
 use rocket::request::{FromRequest, Outcome, Request};
 use rocket::serde::{Deserialize, Serialize};
 
+// use config
 use crate::key::Key;
 use crate::user::User;
 
@@ -28,7 +29,7 @@ impl Token {
         }
     }
     pub fn create_token(uid: &str, token_type: &str) -> String {
-        let key = Key::read().unwrap();
+        let key = Key::read();
         let duration_seconds;
         if token_type == "refresh" {
             duration_seconds = 3600 * 24 * 365;
@@ -67,7 +68,7 @@ impl<'r> FromRequest<'r> for Token {
         fn is_valid(header: &str) -> bool {
             let token = header.trim_start_matches("Bearer ");
 
-            let key = Key::read().unwrap();
+            let key = Key::read();
 
             // simple claims
             let claims = key.verify_token::<NoCustomClaims>(&token, None);

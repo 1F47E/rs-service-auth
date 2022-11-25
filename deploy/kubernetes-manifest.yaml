@@ -49,6 +49,10 @@ spec:
         ports:
         - containerPort: 80
           protocol: TCP
+        env:
+        - name: JWT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: regcred-auth-jwt-key
+              key: key
         imagePullPolicy: Always
-      # imagePullSecrets:
-      # - name: regcred-dockerhub-carsan
