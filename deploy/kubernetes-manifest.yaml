@@ -1,0 +1,54 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rust-service-auth-ingress
+spec:
+  rules:
+  - host: auth.zonde.space
+    http:
+        paths:
+        - pathType: Prefix
+          path: "/"
+          backend:
+            service:
+              name: rust-service-auth
+              port:
+                number: 80
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: rust-service-auth
+spec:
+  type: LoadBalancer
+  selector:
+    app: rust-service-auth
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rust-service-auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rust-service-auth
+  template:
+    metadata:
+      labels:
+        app: rust-service-auth
+    spec:
+      containers:
+      - name: nginx
+        image: docker.io/kkkasparagus/rust-service-auth:latest
+        ports:
+        - containerPort: 80
+          protocol: TCP
+        imagePullPolicy: Always
+      # imagePullSecrets:
+      # - name: regcred-dockerhub-carsan

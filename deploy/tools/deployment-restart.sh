@@ -1,0 +1,1 @@
+kubectl rollout restart go-service-notify

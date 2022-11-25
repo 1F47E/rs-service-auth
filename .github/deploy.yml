@@ -1,0 +1,28 @@
+name: DEPLOY STAGE
+on:
+  push:
+    branches: [ master ]
+env:
+  REGISTRY: "docker.io/kkkasparagus"
+  IMAGE_NAME: "rust-service-auth"
+  DOCKERFILE: "deploy/Dockerfile"
+  RELEASE_VERSION: ${GITHUB_REF:11}
+
+jobs:
+  push_to_registry:
+    name: Build & push 🐳
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set environment variable
+        run: echo "RELEASE_VERSION=${GITHUB_REF:11}" >> $GITHUB_ENV
+      - name: Check out GitHub repo
+        uses: actions/checkout@v2
+
+      # build latest
+      - name: Build container image (as latest)
+        run: docker build -f $(echo $DOCKERFILE) -t $(echo $REGISTRY)/$(echo $IMAGE_NAME):latest .
+
+      # push latest
+      - name: Push image to docker.io Registry (latest)
+        run: docker push $(echo $REGISTRY)/$(echo $IMAGE_NAME):latest
+

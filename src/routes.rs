@@ -30,7 +30,6 @@ pub fn verify(token: Token) -> &'static str {
 pub fn sign_in(auth_data: Json<AuthData>) -> Result<Option<Json<Token>>, Unauthorized<Value>> {
     // println!("{:#?}", &auth_data);
 
-    // let db = DB::init();
     let user = DB::init().get_user_by_username(&auth_data.username);
     match user {
         Some(user) => {
