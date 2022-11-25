@@ -15,14 +15,14 @@ pub struct AuthData {
 #[cfg_attr(test, derive(PartialEq, UriDisplayQuery))]
 #[serde(crate = "rocket::serde")]
 pub struct User {
-    pub id: u32,
+    pub id: u64,
     pub username: String,
     pub password: String,
 }
 
 // TODO: hash password 
 impl User {
-    pub fn new(id: u32, username: String, password: String) -> Self {
+    pub fn new(id: u64, username: String, password: String) -> Self {
         User {
             id,
             username,
