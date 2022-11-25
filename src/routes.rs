@@ -1,10 +1,13 @@
 use rocket::response::status::Unauthorized;
+use rocket::response::status::Conflict;
+
 use rocket::serde::json::Json;
 use rocket::serde::json::{json, Value};
 
 use crate::user::AuthData;
 use crate::token::Token;
 use crate::db::DB;
+
 
 #[get("/")]
 pub fn home(token: Token) -> &'static str {
@@ -23,7 +26,8 @@ pub fn verify(token: Token) -> &'static str {
 pub fn sign_in(auth_data: Json<AuthData>) -> Result<Option<Json<Token>>, Unauthorized<Value>> {
     // println!("{:#?}", &auth_data);
 
-    let user = DB::get_user_by_username(&auth_data.username);
+    // let db = DB::init();
+    let user = DB::init().get_user_by_username(&auth_data.username);
     match user {
         Some(user) => {
             if user.check_pwd(&auth_data.password) {
@@ -50,14 +54,25 @@ pub fn sign_in(auth_data: Json<AuthData>) -> Result<Option<Json<Token>>, Unautho
 }
 
 #[post("/signup", format = "json", data = "<auth_data>")]
-pub fn sign_up(auth_data: Json<AuthData>) -> Option<Json<Token>> {
+pub fn sign_up(auth_data: Json<AuthData>) -> Result<Option<Json<Token>>, Conflict<Value>> {
     // same as sign in but creating user
     println!("creating user: {:?}", auth_data);
-    // check if already exists
-    // create user
-    // sign in user
-    let token = Token::new();
-    Some(Json(token))
+    let user = DB::init().get_user_by_username(&auth_data.username);
+    match user {
+        Some(_) => {
+            println!("User already exist: {}", &auth_data.username);
+            Result::Err(Conflict(Some(json!({
+                "status": "error",
+                "reason": "user already exist"
+            }))))
+        }
+        None => {
+            let user = DB::init().create_user(&auth_data.username, &auth_data.password).unwrap();
+            let token = Token::create_for_user(&user);
+            println!("Successful created and logged in user: {}", user.id);
+            Result::Ok(Some(Json(token)))
+        }
+    }
 }
 
 #[get("/refresh")]

@@ -7,11 +7,11 @@ mod token;
 mod key;
 mod db;
 use crate::key::Key;
+use crate::db::DB;
 
 #[launch]
 fn rocket() -> _ {
 
-    // check is key exist
     let key = Key::read();
     match key {
         Some(_) => println!("Key exist"),
@@ -22,6 +22,10 @@ fn rocket() -> _ {
             println!("Key created");
         }
     }
+
+    // init and fill demo db
+    _ = DB::init();
+
 
     rocket::build()
         .mount("/", routes![routes::home])
