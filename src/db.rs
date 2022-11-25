@@ -10,12 +10,15 @@ pub struct DB {
 impl DB {
     pub fn init() -> Self {
         let path = Path::new("demo_db.json");
-
-        // TODO: check for file existance
+        // create empty file if not found
+        if !path.exists() {
+            fs::write(path, "{}").unwrap();
+        }
         // deserialize to a HashMap
         let mut users: HashMap<String, User> =
             serde_json::from_str(&fs::read_to_string(path).unwrap()).unwrap();
-        println!("users: {:?}", users);
+
+        println!("loaded users: {:?}", users.len());
         if users.is_empty() {
             // generate 1000 users with login like 555000001 and qwerty1 password alike
             for n in 1..1000 {
