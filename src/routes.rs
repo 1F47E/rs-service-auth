@@ -4,6 +4,10 @@ use rocket::response::status::Conflict;
 use rocket::serde::json::Json;
 use rocket::serde::json::{json, Value};
 
+use rocket::fairing::{Fairing, Info, Kind};
+use rocket::http::Header;
+use rocket::{Request, Response};
+
 use crate::user::AuthData;
 use crate::token::Token;
 use crate::db::DB;
@@ -79,8 +83,39 @@ pub fn sign_up(auth_data: Json<AuthData>) -> Result<Option<Json<Token>>, Conflic
 pub fn refresh() -> &'static str {
     "Refresh"
 }
+// CORS
+pub struct Cors;
 
-// CATCHERS
+#[rocket::async_trait]
+impl Fairing for Cors {
+    fn info(&self) -> Info {
+        Info {
+            name: "Cross-Origin-Resource-Sharing Fairing",
+            kind: Kind::Response,
+        }
+    }
+
+    async fn on_response<'r>(&self, _request: &'r Request<'_>, response: &mut Response<'r>) {
+        println!("CORS Fairing triggered");
+        response.set_header(Header::new("Access-Control-Allow-Origin", "*"));
+        response.set_header(Header::new(
+            "Access-Control-Allow-Methods",
+            "POST, PATCH, PUT, DELETE, HEAD, OPTIONS, GET",
+        ));
+        response.set_header(Header::new("Access-Control-Allow-Headers", "*"));
+        response.set_header(Header::new("Access-Control-Allow-Credentials", "true"));
+    }
+}
+
+/// Catches all OPTION requests in order to get the CORS related Fairing triggered.
+#[options("/<_..>")]
+pub fn all_options() {
+    println!("Options triggered");
+    /* Intentionally left empty */
+}
+
+
+// ERROR CATCHERS
 
 #[catch(400)]
 pub fn bad_request() -> Value {
