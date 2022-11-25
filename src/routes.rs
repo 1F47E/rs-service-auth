@@ -14,7 +14,7 @@ pub fn home(token: Token) -> &'static str {
     "Hello, user!"
 }
 
-#[get("/verify")]
+#[get("/")]
 pub fn verify(token: Token) -> &'static str {
     println!("token: {:?}", token);
     "Hello, user!"
@@ -71,6 +71,14 @@ pub fn bad_request() -> Value {
     json!({
         "success": false,
         "error": "bad request"
+    })
+}
+
+#[catch(500)]
+pub fn internal_error() -> Value {
+    json!({
+        "success": false,
+        "error": "Internal Server Error"
     })
 }
 

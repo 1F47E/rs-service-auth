@@ -1,15 +1,12 @@
 // #[macro_use]
 use jwt_simple::prelude::*;
+// use jwt_simple::prelude::Ed25519;
 use rocket::form::FromForm;
 use rocket::http::Status;
 use rocket::request::{FromRequest, Outcome, Request};
 use rocket::serde::{Deserialize, Serialize};
 
-// write files traits
-use std::fs;
-// use std::io::Write; // bring trait into scope
-// use base64::encode;
-
+use crate::key::Key;
 
 // #[derive(Debug, Clone, FromForm, Serialize, Deserialize)]
 // #[cfg_attr(test, derive(PartialEq, UriDisplayQuery))]
@@ -30,33 +27,10 @@ pub struct Token {
     pub expires_in: u32,
 }
 
-#[derive(Serialize, Deserialize)]
-struct MyAdditionalData {
-    user_is_admin: bool,
-    user_country: String,
-}
-
 impl Token {
     pub fn new() -> Self {
-        // TODO: get key from env 
-        let path = std::path::Path::new("HS256Key.key");
-        // debug
-        // gen key and save to file
-        // let key = HS256Key::generate();
-        // let key_bytes = key.to_bytes();
-        // fs::write(path, key_bytes).unwrap();
-
-        // read key from the file
-        // read file from path to bytes
-        let key_bytes = fs::read(path).unwrap();
-        
-        // debug
-        // encode to base64 and save to file
-        // let key_base64 = base64::encode(key_bytes.clone());
-        // let path_base64 = std::path::Path::new("HS256Key-b64.txt");
-        // fs::write(path_base64, key_base64).unwrap();
-
-        let key = HS256Key::from_bytes(&key_bytes);
+        // TODO: get key from env
+        let key= Key::read().unwrap();
 
         // Construct claims
         // simple claims
@@ -108,26 +82,24 @@ impl<'r> FromRequest<'r> for Token {
     async fn from_request(req: &'r Request<'_>) -> Outcome<Self, Self::Error> {
         /// Returns true if header contains valid auth token
         fn is_valid(header: &str) -> bool {
-            // cut bearer from the header
             let token = header.trim_start_matches("Bearer ");
 
-            // read the key
-            let path = std::path::Path::new("HS256Key.key");
-            let key_bytes = fs::read(path).unwrap();
-            let key = HS256Key::from_bytes(&key_bytes); 
+            let key = Key::read().unwrap();
+
+            // custom claims
             // let claims = key.verify_token::<TokenData>(&token, None).unwrap();
+
+            // simple claims
             let claims = key.verify_token::<NoCustomClaims>(&token, None);
             match claims {
                 Ok(claims) => {
-                    // debug
-                    println!("Claims: {:?}", claims);
+                    println!("Token verified, claims: {:?}", claims);
                     true
-                },
+                }
                 Err(error) => {
-                    // debug
-                    println!("Error: {:?}", error);
+                    println!("Token error: {:?}", error);
                     false
-                },
+                }
             }
         }
 

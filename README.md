@@ -1,14 +1,21 @@
 ```
-RUST SERVICE AUTH
+SERVICE AUTH
 ```
-.
 ```
-Basic auth service using JWT tokens
+Auth service using JWT tokens written in Rust and Rocket
 ```
-.
 
-# routes
-### POST /
-### POST /auth/signin
-### POST /auth/signout
-### POST /token/refresh
+### live demo https://react-auth-client.vercel.app/
+
+
+
+## TODO
+- [ ] GET /me
+- [x] POST /auth/signin
+- [ ] POST /auth/signup
+- [x] GET /token/verify
+- [ ] POST /token/refresh
+- [x] JWT
+- [ ] key from env
+- [ ] users from db
+
