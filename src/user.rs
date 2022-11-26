@@ -24,7 +24,6 @@ pub struct User {
     pub fullname: String,
 }
 
-// TODO: hash password 
 impl User {
     pub fn new(id: u64, username: String, password: String) -> Self {
         let hashed_pwd = bcrypt::hash(password).unwrap();

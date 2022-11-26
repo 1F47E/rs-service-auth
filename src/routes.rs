@@ -30,7 +30,7 @@ pub fn verify(token: Token) -> &'static str {
 pub fn sign_in(auth_data: Json<AuthData>) -> Result<Option<Json<Token>>, Unauthorized<Value>> {
     // println!("{:#?}", &auth_data);
 
-    let user = DB::init().get_user_by_username(&auth_data.username);
+    let user = DB::init().get_user_by_username(auth_data.username.clone());
     match user {
         Some(user) => {
             if user.check_pwd(&auth_data.password) {
@@ -38,7 +38,6 @@ pub fn sign_in(auth_data: Json<AuthData>) -> Result<Option<Json<Token>>, Unautho
                 println!("Successful login for user: {}", user.id);
                 Result::Ok(Some(Json(token)))
             } else {
-                // print error wrong password for user id
                 println!("Wrong password for user: {}", user.id);
                 Result::Err(Unauthorized(Some(json!({
                     "status": "error",
@@ -60,7 +59,7 @@ pub fn sign_in(auth_data: Json<AuthData>) -> Result<Option<Json<Token>>, Unautho
 pub fn sign_up(auth_data: Json<AuthData>) -> Result<Option<Json<Token>>, Conflict<Value>> {
     // same as sign in but creating user
     println!("creating user: {:?}", auth_data);
-    let user = DB::init().get_user_by_username(&auth_data.username);
+    let user = DB::init().get_user_by_username(auth_data.username.clone());
     match user {
         Some(_) => {
             println!("User already exist: {}", &auth_data.username);

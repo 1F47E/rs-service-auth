@@ -20,21 +20,20 @@ impl DB {
 
         println!("loaded users: {:?}", users.len());
         if users.is_empty() {
-            // generate 1000 users with login like 555000001 and qwerty1 password alike
-            for n in 1..1000 {
+            // generate 100 users with login like 555000001 and qwerty1 password alike
+            for n in 1..100 {
                 let uid:u64 = 5550000000 + n;
-                let username = String::from(format!("{}", uid));
-                let key = username.clone();
+                let username = format!("{}", n);
                 let password = format!("qwerty{}", n);
-                users.insert(key, User::new(uid, username, password));
+                users.insert(username.clone(), User::new(uid, username, password));
             }
             DB::save(users.clone());
         }
         DB { users: users }
     }
 
-    pub fn get_user_by_username(self, username: &str) -> Option<User> {
-        match self.users.get(username) {
+    pub fn get_user_by_username(self, username:String) -> Option<User> {
+        match self.users.get(&username) {
             Some(user) => Some(user.clone()),
             None => None,
         }
@@ -47,7 +46,7 @@ impl DB {
             None => {
                 let uid: u64 = 555000000 + self.users.len() as u64;
                 let user = User::new(uid, String::from(username), String::from(password));
-                new_users.insert(String::from(username), user.clone());
+                new_users.insert(username.to_string(), user.clone());
                 DB::save(new_users);
                 Some(user)
             }
