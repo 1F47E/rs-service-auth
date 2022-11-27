@@ -7,6 +7,7 @@ pub struct DB {
     users: HashMap<String, User>,
 }
 
+
 impl DB {
     pub fn init() -> Self {
         let path = Path::new("demo_db.json");
@@ -23,9 +24,8 @@ impl DB {
             // generate 100 users with login like 555000001 and qwerty1 password alike
             for n in 1..100 {
                 let uid:u64 = 5550000000 + n;
-                let username = format!("{}", n);
-                let password = format!("qwerty{}", n);
-                users.insert(username.clone(), User::new(uid, username, password));
+                let user = User::new_dummy(uid);
+                users.insert(user.username.clone(), user);
             }
             DB::save(users.clone());
         }

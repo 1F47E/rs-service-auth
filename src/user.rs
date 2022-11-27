@@ -8,9 +8,9 @@ use names::Generator;
 #[cfg_attr(test, derive(PartialEq, UriDisplayQuery))]
 #[serde(crate = "rocket::serde")]
 pub struct AuthData {
-    // #[field(validate = len(..3))]
+    #[field(validate = len(..3))]
     pub username: String,
-    // #[field(validate = len(..8))]
+    #[field(validate = len(..8))]
     pub password: String,
 }
 
@@ -24,14 +24,27 @@ pub struct User {
     pub fullname: String,
 }
 
+
 impl User {
-    pub fn new(id: u64, username: String, password: String) -> Self {
-        let hashed_pwd = bcrypt::hash(password).unwrap();
+    pub fn new_dummy(id: u64) -> Self {
+        let username = format!("{}", id);
+        let password_string = format!("qwerty{}", id);
+        let password = bcrypt::hash(password_string).unwrap();
         let fullname = User::generate_random_name();
         User {
             id,
             username,
-            password:hashed_pwd,
+            password,
+            fullname
+        }
+    }
+    pub fn new(id: u64, username: String, password: String) -> Self {
+        let password = bcrypt::hash(password).unwrap();
+        let fullname = User::generate_random_name();
+        User {
+            id,
+            username,
+            password,
             fullname
         }
     }
@@ -44,8 +57,13 @@ impl User {
         }
     }
 
+    pub fn generate_random_username() -> String {
+        let mut generator = Generator::default();
+        generator.next().unwrap()
+    }
+
     pub fn generate_random_name() -> String {
-        // generate random name (slow!)
+        // generator is slow!
         let mut generator = Generator::default();
         let gen_name = generator.next().unwrap();
         let names = gen_name.replace("-", " ");
