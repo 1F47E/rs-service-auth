@@ -1,6 +1,5 @@
 // #[macro_use]
 use jwt_simple::prelude::*;
-// use jwt_simple::prelude::Ed25519;
 use rocket::form::FromForm;
 use rocket::http::Status;
 use rocket::request::{FromRequest, Outcome, Request};
@@ -8,7 +7,6 @@ use rocket::serde::{Deserialize, Serialize};
 
 // use config
 use crate::key::Key;
-use crate::user::User;
 
 #[derive(Debug, Clone, FromForm, Serialize, Deserialize)]
 #[cfg_attr(test, derive(PartialEq, UriDisplayQuery))]
@@ -19,16 +17,16 @@ pub struct Token {
 }
 
 impl Token {
-    pub fn create_for_user(user: &User) -> Self {
-        let uid = format!("{}", user.id);
-        let access_token = Token::create_token(&uid, "access");
-        let refresh_token = Token::create_token(&uid, "refresh");
+    pub fn create_for_user(uid: i64) -> Self {
+        let subject = format!("{}", uid);
+        let access_token = Token::create_token(&subject, "access");
+        let refresh_token = Token::create_token(&subject, "refresh");
         Token {
             access_token,
             refresh_token,
         }
     }
-    pub fn create_token(uid: &str, token_type: &str) -> String {
+    pub fn create_token(subject: &str, token_type: &str) -> String {
         let key = Key::read();
         let duration_seconds;
         if token_type == "refresh" {
@@ -39,7 +37,7 @@ impl Token {
         // claims with token type and user id as a subject
         let claims = Claims::create(Duration::from_secs(duration_seconds))
             .with_jwt_id(token_type)
-            .with_subject(uid);
+            .with_subject(subject);
 
         key.authenticate(claims).unwrap()
     }
@@ -67,16 +65,12 @@ impl<'r> FromRequest<'r> for Token {
         /// Returns true if header contains valid auth token
         fn is_valid(header: &str) -> bool {
             let token = header.trim_start_matches("Bearer ");
-
             let key = Key::read();
-
-            // simple claims
             let claims = key.verify_token::<NoCustomClaims>(&token, None);
             println!("Claims: {:?}", claims);
             match claims {
                 Ok(claims) => {
                     println!("Claims: {:?}", claims);
-                    // println!("Token verified, claims: {:?}", claims);
                     true
                 }
                 Err(error) => {

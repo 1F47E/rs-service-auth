@@ -8,20 +8,16 @@ mod routes;
 mod token;
 mod user;
 
-use crate::config::Config;
-use crate::db::DB;
+use crate::db::PostgresPool;
+use crate::key::Key;
 
+
+use rocket_db_pools::Database;
 
 #[launch]
 fn rocket() -> _ {
-
-    let config = Config::get();
-    // assert if envs are not set
-    assert!(!config.key_base64.is_empty());
-
-    // init and fill demo db
-    _ = DB::init();
-
+    // will panic if no key is set
+    _ = Key::read();
 
     rocket::build()
         .mount("/", routes![routes::home])
@@ -38,6 +34,8 @@ fn rocket() -> _ {
             ],
         )
         // CORS stuff
-        .mount("/", routes![routes::all_options])
-        .attach(routes::Cors)
+        // for debug only
+        // .attach(routes::Cors)
+        // .mount("/", routes![routes::all_options])
+        .attach(PostgresPool::init())
 }

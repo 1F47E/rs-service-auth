@@ -1,8 +1,11 @@
 use rocket::form::FromForm;
 use rocket::serde::{Deserialize, Serialize};
 
-use pwhash::bcrypt;
 use names::Generator;
+use crate::db::PostgresPool;
+use pwhash::bcrypt;
+use rocket_db_pools::sqlx;
+use rocket_db_pools::Connection;
 
 #[derive(Debug, Clone, FromForm, Serialize, Deserialize)]
 #[cfg_attr(test, derive(PartialEq, UriDisplayQuery))]
@@ -14,19 +17,19 @@ pub struct AuthData {
     pub password: String,
 }
 
-#[derive(Debug, Clone, FromForm, Serialize, Deserialize)]
+#[derive(Debug, Clone, FromForm, Serialize, Deserialize, sqlx::FromRow)]
 #[cfg_attr(test, derive(PartialEq, UriDisplayQuery))]
 #[serde(crate = "rocket::serde")]
 pub struct User {
-    pub id: u64,
+    pub id: i64,
     pub username: String,
     pub password: String,
     pub fullname: String,
 }
 
-
 impl User {
-    pub fn new_dummy(id: u64) -> Self {
+    pub fn create_demo_user() -> Self {
+        let id = 5550000001;
         let username = format!("{}", id);
         let password_string = format!("qwerty{}", id);
         let password = bcrypt::hash(password_string).unwrap();
@@ -35,17 +38,18 @@ impl User {
             id,
             username,
             password,
-            fullname
+            fullname,
         }
     }
-    pub fn new(id: u64, username: String, password: String) -> Self {
+
+    pub fn new(id: i64, username: String, password: String) -> Self {
         let password = bcrypt::hash(password).unwrap();
         let fullname = User::generate_random_name();
         User {
             id,
             username,
             password,
-            fullname
+            fullname,
         }
     }
 
@@ -55,11 +59,6 @@ impl User {
             None => String::new(),
             Some(f) => f.to_uppercase().chain(c).collect(),
         }
-    }
-
-    pub fn generate_random_username() -> String {
-        let mut generator = Generator::default();
-        generator.next().unwrap()
     }
 
     pub fn generate_random_name() -> String {
@@ -75,7 +74,45 @@ impl User {
         let last_name = User::uppercase_first_letter(last);
         format!("{} {}", first_name, last_name)
     }
+
     pub fn check_pwd(&self, password: &str) -> bool {
         bcrypt::verify(password, &self.password)
     }
+
+    pub async fn get_by_username(mut pool: Connection<PostgresPool>, username: &str) -> Option<Self> {
+        let q = "SELECT * FROM users.users WHERE username = $1";
+        let user = sqlx::query_as::<_, User>(q)
+            .bind(username)
+            .fetch_one(&mut *pool)
+            .await;
+        match user {
+            Ok(user) => Some(user),
+            Err(e) => { 
+                println!("User::get_by_username error: {}", e);
+                None
+            },
+        }
+    }
+    
+    pub async fn create_user(mut pool: Connection<PostgresPool>, username: &str, password: &str) -> Option<Self> {
+        let password_hashed = bcrypt::hash(password).unwrap();
+        let fullname = User::generate_random_name();
+        // username is unique
+        let q = "INSERT INTO users.users (username, password, fullname) VALUES ($1, $2, $3) RETURNING *";
+        let user = sqlx::query_as::<_, User>(q)
+            .bind(username)
+            .bind(password_hashed)
+            .bind(fullname)
+            .fetch_one(&mut *pool)
+            .await;
+        match user {
+            Ok(user) => Some(user),
+            Err(e) => { 
+                println!("User::create_user error: {}", e);
+                None
+            },
+        }
+    }
+
+
 }

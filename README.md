@@ -1,22 +1,23 @@
 ```
-SERVICE AUTH
-```
-```
-Auth service using JWT tokens written in Rust and Rocket
+Authentication service using JWT tokens written in Rust
 ```
 
-### live demo https://react-auth-client.vercel.app/
+## live demo https://react-auth-client.vercel.app/
 
+#### envs used
+- ROCKET_DATABASES - see Rocket.toml for example
+- JWT_KEY - base64 encoded HS256 key
 
-
-## TODO
+#### TODO
 - [x] JWT
 - [x] POST /auth/signin
 - [x] POST /auth/signup
 - [x] GET /token/verify
+- [x] key from env
+- [x] postgres as a storage
+- [ ] refresh token logic
 - [ ] POST /token/refresh
 - [ ] GET /me
-- [x] users from file
-- [ ] key from env
-- [ ] storage adapter
+
+
 

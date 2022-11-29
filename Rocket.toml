@@ -1,0 +1,8 @@
+# using env
+# ROCKET_DATABASES='{postgres_pool={url="", pool_size=20, timeout=5}}
+
+# [global.databases.postgres_pool]
+# url = ""
+# pool_size = 20
+# timeout = 5
+

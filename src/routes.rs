@@ -1,17 +1,49 @@
-use rocket::response::status::Unauthorized;
-use rocket::response::status::Conflict;
-
 use rocket::serde::json::Json;
 use rocket::serde::json::{json, Value};
-
 use rocket::fairing::{Fairing, Info, Kind};
-use rocket::http::Header;
 use rocket::{Request, Response};
+use rocket::{
+    http::Status,
+    http::Header,
+    http::ContentType,
+    response::{self, Responder},
+};
+use rocket_db_pools::Connection;
 
 use crate::user::AuthData;
 use crate::token::Token;
-use crate::db::DB;
+use crate::user::User;
+use crate::db::PostgresPool;
 
+#[derive(Debug)]
+pub struct ApiResponse {
+    json: Value,
+    status: Status,
+}
+
+impl<'r, 'o: 'r> Responder<'r, 'o> for ApiResponse {
+    fn respond_to(self, req: &'r Request<'_>) -> response::Result<'o> {
+        Response::build_from(self.json.respond_to(&req).unwrap())
+            .status(self.status)
+            .header(ContentType::JSON)
+            .ok()
+    }
+}
+
+// DB custom error
+struct DatabaseError(rocket_db_pools::sqlx::Error);
+
+impl<'r> Responder<'r, 'r> for DatabaseError {
+    fn respond_to(self, _request: &Request) -> response::Result<'r> {
+        Err(Status::InternalServerError)
+    }
+}
+
+impl From<rocket_db_pools::sqlx::Error> for DatabaseError {
+    fn from(error: rocket_db_pools::sqlx::Error) -> Self {
+        DatabaseError(error)
+    }
+}
 
 #[get("/")]
 pub fn home(token: Token) -> &'static str {
@@ -27,52 +59,47 @@ pub fn verify(token: Token) -> &'static str {
 
 // Using format = json forces “application/json” to be set
 #[post("/signin", format = "json", data = "<auth_data>")]
-pub fn sign_in(auth_data: Json<AuthData>) -> Result<Option<Json<Token>>, Unauthorized<Value>> {
-    // println!("{:#?}", &auth_data);
-
-    let user = DB::init().get_user_by_username(auth_data.username.clone());
+pub async fn sign_in(pool: Connection<PostgresPool>, auth_data: Json<AuthData>) -> Result<Option<Json<Token>>, ApiResponse> {
+    let user = User::get_by_username(pool, &auth_data.username).await;
     match user {
         Some(user) => {
             if user.check_pwd(&auth_data.password) {
-                let token = Token::create_for_user(&user);
+                let token = Token::create_for_user(user.id);
                 println!("Successful login for user: {}", user.id);
                 Result::Ok(Some(Json(token)))
             } else {
                 println!("Wrong password for user: {}", user.id);
-                Result::Err(Unauthorized(Some(json!({
-                    "status": "error",
-                    "reason": "wrong password"
-                }))))
+                Result::Err(ApiResponse {
+                    json: json!({"error": "wrong username or password"}),
+                    status: Status::Unauthorized,
+                })
             }
-        }
-        None => {
+        },
+        None => { 
             println!("User not found: {}", &auth_data.username);
-            Result::Err(Unauthorized(Some(json!({
-            "status": "error",
-            "reason": "user not found"
-        }))))}
+            Result::Err(ApiResponse {
+                json: json!({"error": "wrong username or password"}),
+                status: Status::Unauthorized,
+            })
+        },
     }
-    
 }
 
 #[post("/signup", format = "json", data = "<auth_data>")]
-pub fn sign_up(auth_data: Json<AuthData>) -> Result<Option<Json<Token>>, Conflict<Value>> {
-    // same as sign in but creating user
-    println!("creating user: {:?}", auth_data);
-    let user = DB::init().get_user_by_username(auth_data.username.clone());
+pub async fn sign_up(pool: Connection<PostgresPool>, auth_data: Json<AuthData>) -> Result<Option<Json<Token>>, ApiResponse> {
+    let user = User::create_user(pool, &auth_data.username, &auth_data.password).await;
     match user {
-        Some(_) => {
-            println!("User already exist: {}", &auth_data.username);
-            Result::Err(Conflict(Some(json!({
-                "status": "error",
-                "reason": "user already exist"
-            }))))
-        }
-        None => {
-            let user = DB::init().create_user(&auth_data.username, &auth_data.password).unwrap();
-            let token = Token::create_for_user(&user);
+        Some(user) => {
+            let token = Token::create_for_user(user.id);
             println!("Successful created and logged in user: {}", user.id);
             Result::Ok(Some(Json(token)))
+        }
+        None => {
+            println!("User already exist: {}", &auth_data.username);
+            Result::Err(ApiResponse {
+                json: json!({"error": "user already exist"}),
+                status: Status::Conflict,
+            })
         }
     }
 }
