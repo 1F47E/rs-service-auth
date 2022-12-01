@@ -1,1 +1,1 @@
-kubectl rollout restart go-service-notify
+kubectl rollout restart deployment rust-service-auth

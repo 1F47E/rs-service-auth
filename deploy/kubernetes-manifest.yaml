@@ -50,9 +50,19 @@ spec:
         - containerPort: 80
           protocol: TCP
         env:
+        - name: ROCKET_PORT
+          value: "80"
         - name: JWT_KEY
+        # template - base64 encoded HS256 private key
           valueFrom:
             secretKeyRef:
-              name: regcred-auth-jwt-key
-              key: key
+              name: rust-service-auth-secrets
+              key: jwt_key
+        - name: ROCKET_DATABASES
+        # template {postgres_pool={url=postgresql://user:pass@host:post/dbname, pool_size=20, timeout=5}}
+          valueFrom:
+            secretKeyRef:
+              name: rust-service-auth-secrets
+              key: rocket_databases
+
         imagePullPolicy: Always

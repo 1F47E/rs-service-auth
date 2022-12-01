@@ -18,6 +18,8 @@ Authentication service using JWT tokens written in Rust
 - [ ] refresh token logic
 - [ ] POST /token/refresh
 - [ ] GET /me
+- [ ] add logging
+- [ ] error user already exist not true if db error
 
 
 

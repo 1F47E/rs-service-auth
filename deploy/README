@@ -1,0 +1,7 @@
+ 1. build and push image to registry via github actions (.github) or build_and_push.sh
+ 2. fix secrets.yaml
+ 3. add secrets to k8s via kubectl apply -f secrets.yaml
+ 4. deploy service via kubectl apply -f kubernetes-manifest.yaml
+ 5. run tools/get-external-ip.sh rust-service-auth to get external IP
+ 6. add DNS record of external IP pointing to specified domain name in ingress host
+
