@@ -35,7 +35,7 @@ fn rocket() -> _ {
         )
         // CORS stuff
         // for debug only
-        // .attach(routes::Cors)
-        // .mount("/", routes![routes::all_options])
+        .attach(routes::Cors)
+        .mount("/", routes![routes::all_options])
         .attach(PostgresPool::init())
 }
