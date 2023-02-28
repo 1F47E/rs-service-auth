@@ -20,7 +20,7 @@ fn rocket() -> _ {
     _ = Key::read();
 
     rocket::build()
-        .mount("/", routes![routes::home])
+        .mount("/", routes![routes::home, routes::me])
         .mount("/auth", routes![routes::sign_in, routes::sign_up])
         .mount("/token", routes![routes::verify, routes::refresh])
         .mount("/debug", routes![routes::debug_ping, routes::debug_json])

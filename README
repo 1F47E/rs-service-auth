@@ -1,0 +1,21 @@
+========================================================
+Authentication service using JWT tokens written in Rust
+========================================================
+
+live demo https://react-auth-client.vercel.app/
+
+#### envs used
+ROCKET_DATABASES='{postgres_pool={url="postgresql://user:pass@localhost:5432", pool_size=20, timeout=5}}'
+JWT_KEY=<base64 encoded HS256 key>
+
+#### TODO
+- [ ] validate that key can be decoded from base64
+- [ ] refresh token logic
+- [ ] /token/refresh
+- [ ] /me (profile)
+- [ ] add logging
+- [ ] error user already exist not true if db error
+- [ ] add swagger docs
+
+
+

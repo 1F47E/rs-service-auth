@@ -28,6 +28,7 @@ pub struct User {
 }
 
 impl User {
+    // TODO: remove this
     pub fn create_demo_user() -> Self {
         let id = 5550000001;
         let username = format!("{}", id);
@@ -42,6 +43,7 @@ impl User {
         }
     }
 
+    // TODO: remove this
     pub fn new(id: i64, username: String, password: String) -> Self {
         let password = bcrypt::hash(password).unwrap();
         let fullname = User::generate_random_name();
@@ -61,6 +63,8 @@ impl User {
         }
     }
 
+    // TODO: remove
+    // it was fun to use this crate, but it's too slow
     pub fn generate_random_name() -> String {
         // generator is slow!
         let mut generator = Generator::default();

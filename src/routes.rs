@@ -106,7 +106,14 @@ pub async fn sign_up(pool: Connection<PostgresPool>, auth_data: Json<AuthData>) 
 
 #[get("/refresh")]
 pub fn refresh() -> &'static str {
+    // TODO: implement refresh token
     "Refresh"
+}
+
+#[get("/me")]
+pub async fn me() -> &'static str {
+    // TODO: check user auth and return user data or 401
+    "Me"
 }
 // CORS
 pub struct Cors;
